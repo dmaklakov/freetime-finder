@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Freetime Finder</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+    <script src="scripts/vue.global.js"></script>
+    <script src="scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article class="p-4">
+            <div class="flex flex-col sm:flex-row gap-x-8 gap-y-2 items-center">
+              <div class="w-full sm:w-3/4">
+                <h2>Welcome to Freetime Finder!</h2>
+                <p>
+                  Are you tired of spending your free time trying to figure out
+                  what to do? Freetime Finder is here to help! We provide a
+                  simple and easy way to find fun activities to do in your area.
+                  Just enter your location and the type of activity you're
+                  interested in, and we'll provide you with a list of fun things
+                  to do. Whether you're looking for a new restaurant to try, a
+                  fun event to attend, or a new hobby to pick up, Freetime
+                  Finder has you covered. So why wait? Start finding fun things
+                  to do today!
+                </p>
+              </div>
+              <figure class="w-1/2 sm:w-1/4">
+                <img src="/images/description.svg" alt="Description" />
+              </figure>
+            </div>
+            <div
+              class="flex flex-col-reverse sm:flex-row gap-x-8 gap-y-2 mt-8 items-center"
+            >
+              <figure class="w-1/2 sm:w-1/4">
+                <img src="/images/description-2.svg" alt="Search" />
+              </figure>
+              <div class="w-full sm:w-3/4">
+                <h2>How It works</h2>
+                <p>
+                  With Freetime Finder, you can easily find fun things to do in
+                  your area. Just enter your location or the type of activity
+                  you're interested in, and we'll provide you with a list of fun
+                  things to do. Whether you're looking for a new restaurant to
+                  try, a fun event to attend, or a new hobby to pick up,
+                  Freetime Finder has you covered. So why wait? Start finding
+                  fun things to do today!
+                </p>
+                <ul class="list-disc list-inside">
+                  <li>
+                    Enter your location or title in the search bar or choose the
+                    start and the end dates.
+                  </li>
+                  <li>
+                    Click on an activity to learn more about it, including
+                    location, hours, and reviews.
+                  </li>
+                  <li>Get out there and have fun!</li>
+                </ul>
+              </div>
+            </div>
+            <h2 class="mt-8">Actual events</h2>
+            <p>
+              Ready to start finding fun things to do in your area? Enter the
+              activity title or choose dates and get inspired!
+            </p>
+            <form class="flex flex-row gap-x-8 gap-y-2 mb-4 flex-wrap">
+              <div>
+                <label for="text">Text:</label>
+                <input
+                  type="text"
+                  id="text"
+                  name="text"
+                  v-model="filters.text"
+                  @input="onFiltersChange"
+                  class="border shadow-sm"
+                />
+              </div>
+              <div>
+                <label for="start">Start Datetime:</label>
+                <input
+                  type="datetime-local"
+                  id="start"
+                  name="start"
+                  v-model="filters.start"
+                  @input="onFiltersChange"
+                  class="border shadow-sm"
+                />
+              </div>
+              <div>
+                <label for="end">End Datetime:</label>
+                <input
+                  type="datetime-local"
+                  id="end"
+                  name="end"
+                  v-model="filters.end"
+                  @input="onFiltersChange"
+                  class="border shadow-sm"
+                />
+              </div>
+            </form>
+            <p v-if="futureEvents.length === 0" class="text-gray-700">
+              Unfortunatelly, no events were found
+            </p>
+            <section
+              v-for="(event, idx) in futureEvents"
+              class="border-amber-200 border-2 flex flex-col md:flex-row shadow-lg p-8 gap-x-8 gap-y-4 m-4 sm:m-8"
+              v-bind:class="{ 'rounded-l-3xl' : idx % 2 === 0, 'rounded-r-3xl' : idx % 2 === 1 }"
+            >
+              <figure class="shrink-0">
+                <img
+                  :src="event.image"
+                  :alt="event.title"
+                  class="w-full md:w-72 h-32 md:h-full object-cover"
+                />
+              </figure>
+              <div class="grow flex flex-col justify-between">
+                <div>
+                  <a :href="'event/' + event.ID"
+                    ><h3 class="text-xl underline">{{event.title}}</h3></a
+                  >
+                  <p>{{event.preview}}</p>
+                  <p>
+                    <strong>Start:</strong> {{getPrettyTime(event.start)}}<br />
+                    <strong>End:</strong> {{getPrettyTime(event.end)}}<br />
+                    <strong>Location:</strong> {{event.location}}<br />
+                  </p>
+                </div>
+                <div
+                  class="flex flex-row flex-wrap gap-x-8 gap-y-2 justify-end"
+                >
+                  <span v-for="tag in event.tags.split(',')">#{{tag}}</span>
+                </div>
+              </div>
+            </section>
+          </article>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const vueApp = createApp({
+        data: function () {
+          return {
+            futureEvents: [],
+            filters: {
+              text: "",
+              start: "",
+              end: "",
+            },
+            jwt: {
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+            ws: null,
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+        },
+        mounted() {
+          this.fetchEvents();
+          this.initWebSocket();
+        },
+        methods: {
+          fetchEvents() {
+            axios
+              .get("http://localhost:3000/api/events/all")
+              .then((response) => {
+                this.futureEvents = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          onFiltersChange() {
+            axios
+              .post("http://localhost:3000/api/events/filtered", {
+                text: this.filters.text,
+                start: this.filters.start,
+                end: this.filters.end,
+              })
+              .then((response) => {
+                this.futureEvents = response.data;
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          },
+          getPrettyTime(time) {
+            return new Date(time).toLocaleString();
+          },
+          initWebSocket() {
+            const url = "ws://localhost:3002/event/all";
+            this.ws = new WebSocket(url);
+
+            this.ws.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              switch (data.op) {
+                case "event":
+                  this.onFiltersChange();
+                  break;
+              }
+            };
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

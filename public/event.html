@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Freetime Finder</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+
+    <script id="eventIdPlaceholder"></script>
+
+    <script src="/scripts/vue.global.js"></script>
+    <script src="/scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article v-if="found" class="p-4">
+            <div v-if="!editMode" class="flex flex-row">
+              <div class="w-1/2">
+                <h2>{{event.title}}</h2>
+                <p>{{event.description}}</p>
+                <p>
+                  <strong>Start:</strong> {{getPrettyTime(event.start)}}<br />
+                  <strong>End:</strong> {{getPrettyTime(event.end)}}<br />
+                  <strong>Location:</strong> {{event.location}}<br />
+                </p>
+                <p class="flex flex-row gap-x-8">
+                  <span v-for="tag in event.tags.split(',')">#{{tag}}</span>
+                </p>
+
+                <div class="flex flex-row gap-x-4">
+                  <button
+                    v-if="loggedIn && isEventAdmin"
+                    @click="onEditButtonClick"
+                    class="classic-button"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    v-if="loggedIn && isEventAdmin"
+                    @click="onDeleteButtonClick"
+                    class="second-button"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              <figure class="w-1/2">
+                <img :src="imageUrl" alt="Event Image" />
+              </figure>
+            </div>
+            <div v-else>
+              <h2>Edit Event</h2>
+              <form class="flex flex-col gap-y-2">
+                <div>
+                  <label for="title">Title:</label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    v-model="event.title"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="image">Image URL:</label>
+                  <input
+                    type="text"
+                    id="image"
+                    name="image"
+                    v-model="event.image"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="preview">Preview:</label><br />
+                  <textarea
+                    id="preview"
+                    name="preview"
+                    v-model="event.preview"
+                    class="w-full"
+                    required
+                  ></textarea>
+                </div>
+                <div>
+                  <label for="description">Description:</label><br />
+                  <textarea
+                    id="description"
+                    name="description"
+                    v-model="event.description"
+                    class="w-full"
+                    required
+                  ></textarea>
+                </div>
+                <div>
+                  <label for="start">Start:</label>
+                  <input
+                    type="datetime-local"
+                    id="start"
+                    name="start"
+                    v-model="event.start"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="end">End:</label>
+                  <input
+                    type="datetime-local"
+                    id="end"
+                    name="end"
+                    v-model="event.end"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="location">Location:</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    v-model="event.location"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="tags">Tags:</label>
+                  <input
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    v-model="event.tags"
+                    required
+                  />
+                </div>
+              </form>
+              <div class="flex flex-row gap-x-4 mt-8">
+                <button
+                  v-if="loggedIn && isEventAdmin"
+                  @click="onSaveButtonClick"
+                  class="classic-button"
+                >
+                  Save
+                </button>
+                <button
+                  v-if="loggedIn && isEventAdmin"
+                  @click="onCancelButtonClick"
+                  class="second-button"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <p v-if="message" class="text-green-700">{{message}}</p>
+            <p v-if="error" class="text-red-700">{{error}}</p>
+
+            <h2 class="mt-6">Registrations</h2>
+            <p v-if="registrations.length === 0" class="my-2 text-gray-700">
+              No registrations yet!
+            </p>
+            <div v-else>
+              <ul class="list-disc list-inside">
+                <li v-for="registration in registrations">
+                  {{registration.nickname}}
+                  ({{getPrettyTime(registration.date)}})
+                  <template v-if="isEventAdmin"
+                    >: {{registration.email}}</template
+                  >
+                </li>
+              </ul>
+              <h4 class="text-lg mt-2">
+                Number of registrations: {{ registrations.length }}
+              </h4>
+            </div>
+            <button
+              v-if="loggedIn"
+              @click="updateRegistration"
+              class="classic-button"
+            >
+              <template v-if="alreadyRegistered">Deregister</template
+              ><template v-else>Register</template>
+            </button>
+
+            <h2 class="mb-4 mt-8">Comments</h2>
+            <div class="flex flex-col gap-y-2 mb-6">
+              <p v-if="comments.length === 0" class="my-2 text-gray-700">
+                No comments yet!
+              </p>
+              <div
+                v-for="comment in comments"
+                class="w-full border-2 border-orange-200 shadow-sm p-4"
+              >
+                <template v-if="editCommentId === comment.ID">
+                  <div class="flex flex-row justify-between">
+                    <p class="text-md font-semibold">
+                      {{comment.nickname}} ({{getPrettyTime(comment.added)}}):
+                      <input
+                        type="text"
+                        v-model="commentEdit.headline"
+                        required
+                      />
+                    </p>
+                    <div class="flex flex-row gap-x-2">
+                      <button @click="editCommentCancel" class="second-button">
+                        Cancel
+                      </button>
+                      <button @click="editCommentSave" class="classic-button">
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    v-model="commentEdit.comment"
+                    required
+                    class="w-full mt-4"
+                  >
+{{commentEdit.comment}}</textarea
+                  >
+                </template>
+                <template v-else>
+                  <div class="flex flex-row justify-between">
+                    <p class="text-md font-semibold">
+                      {{comment.nickname}} ({{getPrettyTime(comment.added)}}):
+                      {{comment.headline}}
+                    </p>
+                    <div
+                      v-if="canEditComment(comment.userId)"
+                      class="flex flex-row gap-x-2"
+                    >
+                      <button @click="editComment(comment.ID)">
+                        <img src="/images/edit.svg" class="w-4 h-4" />
+                      </button>
+                      <button @click="deleteComment(comment.ID)">
+                        <img src="/images/delete.svg" class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <p>{{comment.comment}}</p>
+                </template>
+              </div>
+            </div>
+            <form
+              v-if="loggedIn"
+              @submit.prevent="addComment"
+              class="mb-6 flex flex-col gap-y-2"
+            >
+              <h3 class="text-xl font-semibold">Add comment</h3>
+              <div>
+                <label for="headline">Headline:</label>
+                <input
+                  type="text"
+                  id="headline"
+                  v-model="comment.headline"
+                  required
+                />
+              </div>
+              <div>
+                <label for="comment">Comment:</label><br />
+                <textarea
+                  id="comment"
+                  v-model="comment.comment"
+                  class="w-full"
+                  required
+                ></textarea>
+              </div>
+              <button type="submit" class="classic-button">Add Comment</button>
+            </form>
+            <h2>Upvotes</h2>
+            <p v-if="upvotes.length === 0" class="my-2 text-gray-700">
+              No upvotes yet!
+            </p>
+            <div v-else>
+              <ul class="list-disc list-inside">
+                <li v-for="upvote in upvotes">
+                  {{upvote.nickname}} ({{getPrettyTime(upvote.date)}}):
+                  {{upvote.points}}
+                </li>
+              </ul>
+              <h4 class="text-lg mt-2">
+                Average Points: {{ averagePoints.toFixed(2) }}
+              </h4>
+            </div>
+            <form
+              v-if="loggedIn && !alreadyRated"
+              @submit.prevent="addUpvote"
+              class="mb-6 flex flex-col gap-y-2"
+            >
+              <h3 class="text-xl font-semibold">Add upvote</h3>
+              <div>
+                <label for="points">Upvote:</label>
+                <input
+                  type="number"
+                  id="points"
+                  v-model="points"
+                  min="0"
+                  max="10"
+                  step="1"
+                  required
+                />
+              </div>
+              <span class="text-sm text-gray-500"
+                >(0 - very bad, 10 - super)</span
+              >
+              <button type="submit" class="classic-button">Add Upvote</button>
+            </form>
+            <p v-if="loggedIn && alreadyRated" class="my-2 text-gray-700">
+              You have already rated this event!
+            </p>
+          </article>
+          <p v-if="!found" class="py-16">
+            Sorry, we couldn't find the event you were looking for.
+          </p>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const vueApp = createApp({
+        data: function () {
+          return {
+            event: {},
+            found: false,
+            editMode: false,
+            eventCopy: {},
+            registrations: [],
+            comments: [],
+            upvotes: [],
+            jwt: {
+              // Retrieve JWT from local storage
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+            profile: {},
+            message: "",
+            error: "",
+            comment: {
+              headline: "",
+              comment: "",
+            },
+            points: 0,
+            ws: null,
+            editCommentId: -1,
+            commentEdit: {},
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+          isEventAdmin: function () {
+            return (
+              this.loggedIn &&
+              (this.profile.ID === this.event.addedBy ||
+                this.profile.status > 1)
+            );
+          },
+          alreadyRated: function () {
+            return this.upvotes.find(
+              (upvote) => upvote.userId === this.profile.ID
+            )
+              ? true
+              : false;
+          },
+          alreadyRegistered: function () {
+            return this.registrations.find(
+              (registration) => registration.userId === this.profile.ID
+            )
+              ? true
+              : false;
+          },
+          averagePoints: function () {
+            return (
+              this.upvotes.reduce((acc, upvote) => acc + upvote.points, 0) /
+              this.upvotes.length
+            );
+          },
+          imageUrl: function () {
+            return "http://localhost:3000/" + this.event.image ?? "";
+          },
+        },
+        mounted() {
+          if (window.eventId) {
+            this.fetchEvent(window.eventId);
+            this.initWebSocket();
+          }
+          if (this.loggedIn) {
+            this.fetchProfile();
+          }
+        },
+        methods: {
+          authorizationHeader() {
+            return this.jwt.token
+              ? { Authorization: `Bearer ${this.jwt.token}` }
+              : {};
+          },
+          fetchEvent(id) {
+            axios
+              .get("http://localhost:3000/api/events/" + id)
+              .then((response) => {
+                this.found = true;
+                this.event = response.data;
+
+                this.fetchComments(this.event.ID);
+                this.fetchUpvotes(this.event.ID);
+                this.fetchRegistrations(this.event.ID);
+              })
+              .catch((err) => {
+                this.found = false;
+              });
+          },
+          fetchProfile() {
+            axios
+              .get("http://localhost:3000/api/users", {
+                headers: { Authorization: `Bearer ${this.jwt.token}` },
+              })
+              .then((response) => {
+                this.profile = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          fetchComments(eventId) {
+            axios
+              .get("http://localhost:3000/api/comments/event/" + eventId)
+              .then((response) => {
+                this.comments = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          fetchUpvotes(eventId) {
+            axios
+              .get("http://localhost:3000/api/upvotes/event/" + eventId)
+              .then((response) => {
+                this.upvotes = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          fetchRegistrations(eventId) {
+            axios
+              .get("http://localhost:3000/api/registrations/event/" + eventId)
+              .then((response) => {
+                this.registrations = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          addComment() {
+            axios
+              .put(
+                "http://localhost:3000/api/comments/create",
+                {
+                  eventId: this.event.ID,
+                  userId: this.profile.ID,
+                  comment: this.comment.comment,
+                  headline: this.comment.headline,
+                },
+                { headers: this.authorizationHeader() }
+              )
+              .then((response) => {
+                // this.fetchComments(this.event.ID)
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          addUpvote() {
+            axios
+              .put(
+                "http://localhost:3000/api/upvotes/create",
+                {
+                  eventId: this.event.ID,
+                  userId: this.profile.ID,
+                  points: this.points,
+                },
+                { headers: this.authorizationHeader() }
+              )
+              .then((response) => {
+                // this.fetchUpvotes(this.event.ID)
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          onEditButtonClick() {
+            this.editMode = true;
+            this.eventCopy = JSON.parse(JSON.stringify(this.event));
+          },
+          onSaveButtonClick() {
+            this.editMode = false;
+            axios
+              .put(
+                "http://localhost:3000/api/events/" + this.event.ID,
+                this.event,
+                { headers: this.authorizationHeader() }
+              )
+              .then((response) => {
+                this.message = "Event updated successfully!";
+                setTimeout(() => {
+                  this.message = "";
+                }, 5000);
+              })
+              .catch((err) => {
+                this.error = "Error updating event!";
+                console.log(err);
+                setTimeout(() => {
+                  this.error = "";
+                }, 5000);
+              });
+          },
+          onCancelButtonClick() {
+            this.editMode = false;
+            this.event = this.eventCopy;
+          },
+          onDeleteButtonClick() {
+            if (!confirm("Are you sure you want to delete this event?")) {
+              return;
+            }
+
+            axios
+              .delete("http://localhost:3000/api/events/" + this.event.ID, {
+                headers: this.authorizationHeader(),
+              })
+              .then((response) => {
+                alert("Event deleted successfully!");
+                window.location.href = "/";
+              })
+              .catch((err) => {
+                this.error = "Error deleting event!";
+                console.log(err);
+                setTimeout(() => {
+                  this.error = "";
+                }, 5000);
+              });
+          },
+          getPrettyTime(time) {
+            return new Date(time).toLocaleString();
+          },
+          canEditComment(userId) {
+            return (
+              this.loggedIn &&
+              (this.profile.ID === userId || this.profile.status > 1)
+            );
+          },
+          deleteComment(commentId) {
+            if (!confirm("Are you sure you want to delete this comment?")) {
+              return;
+            }
+
+            axios
+              .delete("http://localhost:3000/api/comments/" + commentId, {
+                headers: this.authorizationHeader(),
+                data: { eventId: window.eventId, userId: this.profile.ID },
+              })
+              .then((response) => {
+                // this.fetchComments(this.event.ID)
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          editComment(commentId) {
+            this.editCommentId = commentId;
+            this.commentEdit = JSON.parse(
+              JSON.stringify(
+                this.comments.find((comment) => comment.ID === commentId)
+              )
+            );
+          },
+          editCommentSave() {
+            axios
+              .put(
+                "http://localhost:3000/api/comments/" + this.commentEdit.ID,
+                this.commentEdit,
+                { headers: this.authorizationHeader() }
+              )
+              .then((response) => {
+                // this.fetchComments(this.event.ID)
+
+                this.editCommentId = -1;
+                this.commentEdit = {};
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          editCommentCancel() {
+            this.editCommentId = -1;
+            this.commentEdit = {};
+          },
+          updateRegistration() {
+            if (this.alreadyRegistered) {
+              axios
+                .delete(
+                  "http://localhost:3000/api/registrations/" +
+                    this.registrations.find(
+                      (registration) => registration.userId === this.profile.ID
+                    ).ID,
+                  {
+                    headers: this.authorizationHeader(),
+                    data: { eventId: window.eventId, userId: this.profile.ID },
+                  }
+                )
+                .then((response) => {
+                  // this.fetchRegistrations(this.event.ID)
+                })
+                .catch((err) => {
+                  console.log(err);
+                });
+            } else {
+              axios
+                .put(
+                  "http://localhost:3000/api/registrations/create",
+                  { eventId: this.event.ID, userId: this.profile.ID },
+                  { headers: this.authorizationHeader() }
+                )
+                .then((response) => {
+                  // this.fetchRegistrations(this.event.ID)
+                })
+                .catch((err) => {
+                  console.log(err);
+                });
+            }
+          },
+          initWebSocket() {
+            const url = "ws://localhost:3002/event/" + window.eventId;
+            this.ws = new WebSocket(url);
+
+            this.ws.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              switch (data.op) {
+                case "event":
+                  this.fetchEvent(window.eventId);
+                  break;
+                case "registration":
+                  this.fetchRegistrations(window.eventId);
+                  break;
+                case "comment":
+                  this.fetchComments(window.eventId);
+                  break;
+                case "upvote":
+                  this.fetchUpvotes(window.eventId);
+                  break;
+              }
+            };
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

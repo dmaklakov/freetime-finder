@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Profile</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+    <script src="scripts/vue.global.js"></script>
+    <script src="scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article v-if="loggedIn" class="p-4">
+            <h2>Profile</h2>
+            <p>Welcome, {{profile.nickname}}!</p>
+            <form @submit.prevent="updateProfile" class="flex flex-col gap-y-3">
+              <div class="flex flex-row gap-x-8">
+                <div>
+                  <label for="email">Email:</label>
+                  <input
+                    type="email"
+                    id="email"
+                    v-model="profile.email"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="nickname">Nickname:</label>
+                  <input
+                    type="text"
+                    id="nickname"
+                    v-model="profile.nickname"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="flex flex-row gap-x-8">
+                <div>
+                  <label for="firstname">Firstname:</label>
+                  <input
+                    type="text"
+                    id="firstname"
+                    v-model="profile.firstname"
+                    required
+                  />
+                </div>
+                <div>
+                  <label for="lastname">Lastname:</label>
+                  <input
+                    type="text"
+                    id="lastname"
+                    v-model="profile.lastname"
+                    required
+                  />
+                </div>
+              </div>
+              <button type="submit" class="classic-button">
+                Update Profile
+              </button>
+            </form>
+
+            <p v-if="profileSuccess" class="text-green-700">
+              {{profileSuccess}}
+            </p>
+            <p v-if="profileError" class="text-red-700">{{profileError}}</p>
+            <hr />
+            <h2>Add event</h2>
+            <form
+              @submit.prevent="onAddEventClick"
+              class="flex flex-col gap-y-3 my-3"
+            >
+              <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" v-model="event.title" required />
+              </div>
+              <div>
+                <label for="preview">Preview:</label>
+                <input
+                  type="text"
+                  id="preview"
+                  v-model="event.preview"
+                  required
+                />
+              </div>
+              <div>
+                <label for="description">Description:</label>
+                <textarea
+                  id="description"
+                  v-model="event.description"
+                  class="w-full"
+                  required
+                ></textarea>
+              </div>
+              <div>
+                <label for="image">Image:</label>
+                <input type="text" id="image" v-model="event.image" required />
+              </div>
+              <div class="flex flex-row gap-x-8 gap-y-3">
+                <div>
+                  <label for="start">Start:</label>
+                  <input
+                    type="datetime-local"
+                    id="start"
+                    v-model="event.start"
+                  />
+                </div>
+                <div>
+                  <label for="end">End:</label>
+                  <input type="datetime-local" id="end" v-model="event.end" />
+                </div>
+              </div>
+              <div>
+                <label for="location">Location:</label>
+                <input
+                  type="text"
+                  id="location"
+                  v-model="event.location"
+                  required
+                />
+              </div>
+              <div>
+                <label for="tags">Tags:</label>
+                <input type="text" id="tags" v-model="event.tags" required />
+              </div>
+              <button type="submit" class="classic-button">Add Event</button>
+            </form>
+            <p v-if="eventSuccess" class="text-green-700">{{eventSuccess}}</p>
+            <p v-if="eventError" class="text-red-700">{{eventError}}</p>
+            <hr />
+            <h2>Your registrations</h2>
+            <ul class="list-disc list-inside my-3">
+              <li v-for="registration in registrations" :key="registration.ID">
+                <a :href="'/event/' + registration.eventId" class="underline"
+                  >{{registration.title}}</a
+                >
+                ({{getPrettyTime(registration.start)}} -
+                {{getPrettyTime(registration.end)}}):
+                {{getPrettyTime(registration.date)}}
+              </li>
+            </ul>
+            <hr />
+            <h2>Your upvotes</h2>
+            <ul class="list-disc list-inside my-3">
+              <li v-for="upvote in upvotes" :key="upvote.ID">
+                <a :href="'/event/' + upvote.eventId" class="underline"
+                  >{{upvote.title}}</a
+                >: {{upvote.points}}
+              </li>
+            </ul>
+          </article>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const vueApp = createApp({
+        data: function () {
+          return {
+            event: {
+              title: "",
+              preview: "",
+              description: "",
+              image: "",
+              start: "",
+              end: "",
+              location: "",
+              tags: "",
+            },
+            profile: {},
+            jwt: {
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+            upvotes: [],
+            comments: [],
+            registrations: [],
+            interestedEvents: [],
+            ws: null,
+            eventSuccess: "",
+            eventError: "",
+            profileSuccess: "",
+            profileError: "",
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+        },
+        async mounted() {
+          if (!this.loggedIn) {
+            window.location.href = "/login";
+          } else {
+            await this.fetchProfile();
+            await this.fetchRegistrations();
+            await this.fetchUpvotes();
+            await this.fetchInterestedEvents();
+            this.initWebSocket();
+          }
+        },
+        methods: {
+          authorizationHeader() {
+            return this.jwt.token
+              ? { Authorization: `Bearer ${this.jwt.token}` }
+              : {};
+          },
+          async updateProfile() {
+            await axios
+              .put(
+                "http://localhost:3000/api/users/" + this.profile.ID,
+                this.profile,
+                { headers: this.authorizationHeader() }
+              )
+              .then((response) => {
+                this.profileSuccess = "Profile was updated!";
+                setTimeout(() => {
+                  this.profileSuccess = "";
+                }, 5000);
+              })
+              .catch((err) => {
+                this.profileError =
+                  err.response.data.message ??
+                  "An error occured, please try again!";
+                setTimeout(() => {
+                  this.profileError = "";
+                }, 5000);
+              });
+          },
+          async fetchProfile() {
+            await axios
+              .get("http://localhost:3000/api/users", {
+                headers: { Authorization: `Bearer ${this.jwt.token}` },
+              })
+              .then((response) => {
+                this.profile = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          async fetchRegistrations() {
+            await axios
+              .get(
+                "http://localhost:3000/api/registrations/user/" +
+                  this.profile.ID,
+                { headers: { Authorization: `Bearer ${this.jwt.token}` } }
+              )
+              .then((response) => {
+                this.registrations = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          async fetchUpvotes() {
+            await axios
+              .get(
+                "http://localhost:3000/api/upvotes/user/" + this.profile.ID,
+                { headers: { Authorization: `Bearer ${this.jwt.token}` } }
+              )
+              .then((response) => {
+                this.upvotes = response.data;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          async fetchInterestedEvents() {
+            await axios
+              .get(
+                "http://localhost:3000/api/users/interested/" + this.profile.ID,
+                { headers: { Authorization: `Bearer ${this.jwt.token}` } }
+              )
+              .then((response) => {
+                this.interestedEvents = [];
+                Object.entries(response.data).forEach(([key, value]) => {
+                  this.interestedEvents.push(value.eventId);
+                });
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          async onAddEventClick() {
+            await axios
+              .put(
+                "http://localhost:3000/api/events/create",
+                { ...this.event, addedBy: this.profile.ID },
+                {
+                  headers: this.authorizationHeader(),
+                }
+              )
+              .then((response) => {
+                this.eventSuccess = "Event was added, have fun!";
+                this.event = {};
+                setTimeout(() => {
+                  this.eventSuccess = "";
+                }, 5000);
+              })
+              .catch((err) => {
+                console.log(err);
+                this.eventError = "An error occured, please try again!";
+                setTimeout(() => {
+                  this.eventError = "";
+                }, 5000);
+              });
+          },
+          getPrettyTime(time) {
+            return new Date(time).toLocaleString();
+          },
+          initWebSocket() {
+            const url = "ws://localhost:3003/profile/" + this.profile.ID;
+            this.ws = new WebSocket(url);
+
+            this.ws.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              switch (data.op) {
+                case "profile":
+                  this.fetchProfile();
+                  break;
+                case "registration":
+                  this.fetchRegistrations();
+                  break;
+                case "upvote":
+                  this.fetchUpvotes();
+                  break;
+              }
+            };
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

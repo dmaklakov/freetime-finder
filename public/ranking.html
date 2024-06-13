@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Ranking</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+    <script src="scripts/vue.global.js"></script>
+    <script src="scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article class="p-4">
+            <div class="flex flex-col sm:flex-row space-x-8 items-center">
+              <div>
+                <h2>Welcome to Ranking Page!</h2>
+                <p>
+                  Here you can see the ranking of the most active users and the
+                  most popular events of Freetime Finder.
+                </p>
+              </div>
+              <figure>
+                <img src="/images/description-2.svg" alt="Description" />
+              </figure>
+            </div>
+            <h2 class="mt-8">Users with most comments</h2>
+            <p>Check out the most active users:</p>
+            <ol class="list-decimal list-inside">
+              <li v-for="comment in  comments">
+                {{comment.nickname}} ({{comment.commentsCount}})
+              </li>
+            </ol>
+            <h2 class="mt-8">Events with most registrations</h2>
+            <p>Check out the events with most registrations:</p>
+            <ol class="list-decimal list-inside">
+              <li v-for="registration in registrations">
+                <a :href="'/event/' + registration.ID" class="underline"
+                  >{{registration.title}}</a
+                >
+                ({{registration.registrationsCount}})
+              </li>
+            </ol>
+            <h2 class="mt-8">Events with best average upvotes</h2>
+            <p>Check out the events with best average upvotes:</p>
+            <ol class="list-decimal list-inside">
+              <li v-for="average in averages">
+                <a :href="'/event/' + average.ID" class="underline"
+                  >{{average.title}}</a
+                >
+                ({{average.averageUpvotes.toFixed(2)}})
+              </li>
+            </ol>
+          </article>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const vueApp = createApp({
+        data: function () {
+          return {
+            jwt: {
+              // Retrieve JWT from local storage
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+            comments: [],
+            registrations: [],
+            averages: [],
+            wsEvents: null,
+            wsUsers: null,
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+        },
+        mounted() {
+          this.fetchRankings();
+          this.initWebSocket();
+        },
+        methods: {
+          async fetchRankings() {
+            await axios
+              .get("http://localhost:3000/api/rankings")
+              .then((response) => {
+                this.comments = response.data.comments;
+                this.registrations = response.data.registrations;
+                this.averages = response.data.averages;
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          },
+          initWebSocket() {
+            const urlEvents = "ws://localhost:3002/event/all";
+            this.wsEvents = new WebSocket(urlEvents);
+
+            this.wsEvents.onmessage = (_) => {
+              this.fetchRankings();
+            };
+
+            const urlUsers = "ws://localhost:3003/users/all";
+            this.wsUsers = new WebSocket(urlUsers);
+
+            this.wsUsers.onmessage = (_) => {
+              this.fetchRankings();
+            };
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

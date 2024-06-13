@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  nav {
+    a {
+      @apply no-underline text-white p-2 rounded hover:bg-orange-600 ease-linear duration-300;
+    }
+  }
+}
+
+article {
+  p {
+    @apply py-2;
+  }
+  h2 {
+    @apply text-2xl underline my-2 underline-offset-8;
+  }
+  input,
+  textarea {
+    @apply p-2 border border-gray-300 rounded shadow-sm mx-2;
+  }
+
+  .classic-button {
+    @apply border bg-orange-500 border-orange-500 hover:bg-orange-700 hover:border-orange-700 text-white font-bold py-2 px-4 rounded ease-linear duration-300;
+  }
+
+  .second-button {
+    @apply border border-orange-300 hover:border-orange-600 bg-white text-gray-700 hover:text-gray-900 rounded py-2 px-4 ease-linear duration-300;
+  }
+}
+
+.message-success {
+  @apply text-green-800;
+}
+
+.message-error {
+  @apply text-red-800;
+}

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Login</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+    <script src="scripts/vue.global.js"></script>
+    <script src="scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article class="p-4">
+            <h2>Login</h2>
+            <form @submit.prevent="login" class="my-8 flex flex-col gap-y-2">
+              <div>
+                <label for="emailNickname">Email or nickname:</label>
+                <input
+                  type="text"
+                  id="emailNickname"
+                  v-model="emailNickname"
+                  class="border shadow-sm"
+                />
+              </div>
+              <div>
+                <label for="passwort">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  v-model="password"
+                  class="border shadow-sm"
+                />
+              </div>
+              <button type="submit" class="classic-button w-24 mt-4">
+                Login
+              </button>
+            </form>
+            <p v-if="messageSuccess" class="text-green-700">
+              {{ messageSuccess }}
+            </p>
+            <p v-if="messageError" class="text-red-700">{{ messageError }}</p>
+          </article>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp } = Vue;
+
+      createApp({
+        data() {
+          return {
+            emailNickname: "",
+            password: "",
+            messageSuccess: "",
+            messageError: "",
+            jwt: {
+              // Retrieve JWT from local storage
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+        },
+        methods: {
+          login() {
+            const url = "http://localhost:3000/user_handling/login";
+            axios
+              .post(url, { login: this.emailNickname, password: this.password })
+              .then((response) => {
+                const { token, expiresAt } = response.data;
+                localStorage.setItem("jwt", token);
+                localStorage.setItem("expiresAt", expiresAt);
+                this.messageSuccess =
+                  "Login successful! You will be redirected soon!";
+                setTimeout(() => {
+                  window.location.href = "/";
+                }, 2000);
+              })
+              .catch((error) => {
+                console.error("Error:", error);
+                this.messageError = "Login failed!";
+                setTimeout(() => {
+                  this.messageError = "";
+                }, 5000);
+              });
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

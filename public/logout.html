@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Freetime Finder</title>
+    <!--<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>-->
+    <script src="scripts/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="relative bg-orange-100">
+
+    </div>
+    <script>
+        const { createApp, ref } = Vue
+      
+        const vueApp = createApp({
+            data: function() {
+                
+            },
+            computed: {
+            },
+            mounted() {
+                localStorage.removeItem('jwt')
+                localStorage.removeItem('expiresAt')
+                window.location.href = "/"
+            },
+            methods: {
+                
+            }
+        }).mount('#app')
+      </script>
+</body>
+</html>

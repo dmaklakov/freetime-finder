@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Freetime Finder</title>
+    <link rel="stylesheet" type="text/css" href="/styles/output.css" />
+    <script src="scripts/vue.global.js"></script>
+    <script src="scripts/axios.min.js"></script>
+  </head>
+  <body>
+    <div id="app" class="relative bg-amber-100 min-h-screen">
+      <div class="inline text-white sticky top-0 z-10 w-full h-full">
+        <header
+          class="flex flex-row justify-between items-center px-4 py-1 bg-orange-400 space-x-2"
+        >
+          <figure>
+            <img
+              src="/images/logo.svg"
+              class="h-24 object-cover"
+              alt="Freetime Finder Logo"
+            />
+          </figure>
+          <div id="title">
+            <h1 class="text-3xl">Freetime Finder</h1>
+          </div>
+          <nav class="flex flex-row flex-wrap gap-x-2">
+            <a href="/">Home</a>
+            <a href="/ranking">Ranking</a>
+            <a href="/jobs">Jobs</a>
+            <a v-if="!loggedIn" href="/register">Register</a>
+            <a v-if="!loggedIn" href="/login">Login</a>
+            <a v-if="loggedIn" href="/profile">Profile</a>
+            <a v-if="loggedIn" href="/logout">Logout</a>
+          </nav>
+        </header>
+        <div
+          class="w-0 h-0 border-t-[4vh] overflow-hidden border-r-[95vw] border-b-0 border-l-0 border-t-orange-400 border-r-transparent border-b-transparent border-l-transparent"
+        ></div>
+        <div
+          class="inline absolute top-[25vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-pink-400 scale-y-[-1]"
+        ></div>
+        <div
+          class="inline absolute top-[65vh] border-t-[150px] border-r-0 border-b-[100px] border-l-[3vw] border-t-transparent border-r-transparent border-b-transparent border-l-teal-400"
+        ></div>
+      </div>
+      <main class="bg-white max-w-screen-xl mx-auto mt-2">
+        <div id="content" class="mx-6">
+          <article class="p-4">
+            <h2>Registration</h2>
+            <p>You need to register to use all features of Freetime Finder.</p>
+            <form @submit.prevent="register" class="flex flex-col gap-y-3 my-3">
+              <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" v-model="email" required />
+              </div>
+              <div>
+                <label for="password">Password:</label>
+                <input
+                  type="password"
+                  id="password"
+                  v-model="password"
+                  required
+                />
+              </div>
+              <div>
+                <label for="nickname">Nickname:</label>
+                <input type="text" id="nickname" v-model="nickname" required />
+              </div>
+              <div>
+                <label for="firstname">Firstname:</label>
+                <input
+                  type="text"
+                  id="firstname"
+                  v-model="firstname"
+                  required
+                />
+              </div>
+              <div>
+                <label for="lastname">Lastname:</label>
+                <input type="text" id="lastname" v-model="lastname" required />
+              </div>
+              <button type="submit" class="classic-button">Register</button>
+            </form>
+            <p v-if="success" class="text-green-700">{{ success }}</p>
+            <p v-if="error" class="text-red-700">{{ error }}</p>
+          </article>
+          <footer class="p-4 text-center border-t-amber-200 border-t">
+            &copy; 2024 Freetime Finder. All rights reserved.
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const { createApp, ref } = Vue;
+
+      const vueApp = createApp({
+        data: function () {
+          return {
+            email: "",
+            password: "",
+            nickname: "",
+            firstname: "",
+            lastname: "",
+            jwt: {
+              // Retrieve JWT from local storage
+              token: localStorage.getItem("jwt"),
+              expiresAt: localStorage.getItem("expiresAt")
+                ? new Date(+localStorage.getItem("expiresAt"))
+                : null,
+            },
+            success: "",
+            error: "",
+          };
+        },
+        computed: {
+          loggedIn: function () {
+            return (
+              this.jwt.token &&
+              this.jwt.expiresAt &&
+              this.jwt.expiresAt > new Date()
+            );
+          },
+        },
+        mounted() {},
+        methods: {
+          register() {
+            const url = "http://localhost:3000/user_handling/register";
+            axios
+              .post(url, {
+                email: this.email,
+                password: this.password,
+                nickname: this.nickname,
+                firstname: this.firstname,
+                lastname: this.lastname,
+              })
+              .then((response) => {
+                this.success =
+                  "Registration successful! You will be redirected soon!";
+                setTimeout(() => {
+                  window.location.href = "/";
+                }, 3000);
+              })
+              .catch((error) => {
+                this.error =
+                  error.response.data.message ?? "Registration failed!";
+                setTimeout(() => {
+                  this.error = "";
+                }, 5000);
+              });
+          },
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
